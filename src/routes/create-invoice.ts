@@ -12,7 +12,7 @@ const getSupabase = (token: string) =>
     },
   });
 
-export const createInvoiceHandler = async (c: Context) => {
+export const createInvoice = async (c: Context) => {
   const jwtPayload = c.get("jwtPayload");
   const token = c.req.header("Authorization")?.replace("Bearer ", "");
 
