@@ -8,7 +8,7 @@ const supabase = createClient(
 
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN!;
 
-export const xenditWebhookHandler = async (c: Context) => {
+export const xenditWebhook = async (c: Context) => {
   const token = c.req.header("x-callback-token");
   if (token !== XENDIT_CALLBACK_TOKEN) {
     return c.json({ message: "Unauthorized" }, 401);
@@ -38,14 +38,10 @@ export const xenditWebhookHandler = async (c: Context) => {
     .eq("user_id", user_id)
     .single();
 
-  if (!balance) {
-    await supabase.from("balances").insert({ user_id, user_balance: amount });
-  } else {
-    await supabase
-      .from("balances")
-      .update({ user_balance: balance.user_balance + amount })
-      .eq("user_id", user_id);
-  }
+  await supabase
+    .from("balances")
+    .update({ user_balance: balance?.user_balance + amount })
+    .eq("user_id", user_id);
 
   await supabase
     .from("transactions")

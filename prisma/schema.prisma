@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,41 +8,42 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String     @id @default(uuid())
   name          String
-  email         String
+  email         String     @unique
   emailVerified Boolean
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now())
   sessions      Session[]
   accounts      Account[]
+  balances      Balance[]
+  payments      Payment[]
+  transactions  Transaction[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
   ipAddress String?
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
 model Account {
-  id                    String    @id
+  id                    String   @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -56,19 +51,52 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now())
 
   @@map("account")
 }
 
 model Verification {
-  id         String    @id
+  id         String   @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
 
   @@map("verification")
+}
+
+model Balance {
+  id          String   @id @default(uuid())
+  userId      String? 
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userBalance Int?     @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("balances")
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  userId     String? 
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  amount     Int
+  status     String?  @default("pending")
+  invoiceUrl String?
+  createdAt  DateTime @default(now())
+
+  @@map("payments")
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  amount    Int
+  type      String
+  date      DateTime @default(now())
+
+  @@map("transactions")
 }
