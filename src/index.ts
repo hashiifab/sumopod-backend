@@ -1,24 +1,28 @@
 import "dotenv/config";
 import { Hono } from "hono";
 import authRoute from "./routes/auth";
-import { jwt } from "hono/jwt";
 import { createInvoice } from "./routes/create-invoice";
 import { xenditWebhook } from "./routes/xendit-webhook";
+import dataRoute from "./routes/data";
 import { cors } from "hono/cors";
+import { authMiddleware } from "./middleware/auth";
 
 const app = new Hono();
 
 app.use(
-  "/api/*",
+  "*",
   cors({
-    origin: "http://localhost:3001",
-    allowHeaders: ["Content-Type", "Authorization"],
+    origin: ["http://localhost:3001", "*", "null"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Session-Token"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
-app.route("/", authRoute);
 
-app.use("/create-invoice", jwt({ secret: process.env.JWT_SECRET! }));
+app.route("/", authRoute);
+app.route("/api/data", dataRoute);
+
+app.use("/create-invoice", authMiddleware);
 
 app.post("/create-invoice", createInvoice);
 app.post("/xendit-webhook", xenditWebhook);

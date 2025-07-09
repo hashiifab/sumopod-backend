@@ -1,11 +1,7 @@
 import { Context } from "hono";
-import { createClient } from "@supabase/supabase-js";
+import { PrismaClient } from "@prisma/client";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
-
+const prisma = new PrismaClient();
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN!;
 
 export const xenditWebhook = async (c: Context) => {
@@ -16,36 +12,58 @@ export const xenditWebhook = async (c: Context) => {
 
   const body = await c.req.json();
   const { external_id, amount } = body;
-  const id = external_id?.split("-")[1];
 
-  if (!id || !amount) {
+  const idString = external_id?.replace("sumopod-", "");
+  const id = parseInt(idString);
+
+  if (!id || !amount || isNaN(id)) {
     return c.json({ message: "Invalid payload" }, 400);
   }
 
-  const { data: payment } = await supabase
-    .from("payments")
-    .select("user_id")
-    .eq("id", id)
-    .single();
+  const payment = await prisma.payment.findUnique({
+    where: { id },
+    select: { userId: true },
+  });
 
-  const user_id = payment?.user_id;
+  const userId = payment?.userId;
 
-  await supabase.from("payments").update({ status: "paid" }).eq("id", id);
+  if (!userId) {
+    return c.json({ message: "Payment not found" }, 404);
+  }
 
-  const { data: balance } = await supabase
-    .from("balances")
-    .select("user_balance")
-    .eq("user_id", user_id)
-    .single();
+  await prisma.payment.update({
+    where: { id },
+    data: { status: "paid" },
+  });
 
-  await supabase
-    .from("balances")
-    .update({ user_balance: balance?.user_balance + amount })
-    .eq("user_id", user_id);
+  let balance = await prisma.balance.findFirst({
+    where: { userId },
+    select: { id: true, userBalance: true },
+  });
 
-  await supabase
-    .from("transactions")
-    .insert({ user_id, type: "purchase", amount });
+  if (!balance) {
+    balance = await prisma.balance.create({
+      data: { userId, userBalance: 0 },
+      select: { id: true, userBalance: true },
+    });
+  }
 
-  return c.json({ status: "ok" });
+  const newBalance = (balance.userBalance || 0) + amount;
+
+  await prisma.balance.update({
+    where: { id: balance.id },
+    data: { userBalance: newBalance },
+  });
+
+  const transaction = await prisma.transaction.create({
+    data: {
+      userId,
+      type: "purchase",
+      amount,
+    },
+  });
+
+  return c.json({
+    status: "ok",
+  });
 };

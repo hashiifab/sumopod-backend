@@ -8,17 +8,17 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(uuid())
+  id            String        @id @default(uuid())
   name          String
-  email         String     @unique
+  email         String        @unique
   emailVerified Boolean
   image         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now())
-  sessions      Session[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now())
   accounts      Account[]
   balances      Balance[]
   payments      Payment[]
+  sessions      Session[]
   transactions  Transaction[]
 
   @@map("user")
@@ -39,11 +39,10 @@ model Session {
 }
 
 model Account {
-  id                    String   @id @default(uuid())
+  id                    String    @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -51,8 +50,9 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @default(now())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
@@ -70,33 +70,42 @@ model Verification {
 
 model Balance {
   id          String   @id @default(uuid())
-  userId      String? 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId      String?
   userBalance Int?     @default(0)
   createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
 
   @@map("balances")
 }
 
 model Payment {
-  id         String   @id @default(uuid())
-  userId     String? 
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id         Int      @id @default(autoincrement())
+  userId     String?
   amount     Int
   status     String?  @default("pending")
   invoiceUrl String?
   createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@map("payments")
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  amount    Int
-  type      String
-  date      DateTime @default(now())
+  id     String   @id @default(uuid())
+  userId String?
+  amount Int
+  type   String
+  date   DateTime @default(now())
+  user   User?    @relation(fields: [userId], references: [id])
 
   @@map("transactions")
+}
+
+model Jwks {
+  id         String   @id
+  publicKey  String
+  privateKey String
+  createdAt  DateTime
+
+  @@map("jwks")
 }
