@@ -1,6 +1,6 @@
 import { Context } from "hono";
-import { PaymentService } from "../services/paymentService";
-import { Variables } from "../types/data";
+import { PaymentService } from "../services/paymentService.js";
+import { Variables } from "../types/data.js";
 
 export class PaymentController {
   static async getPayments(c: Context<{ Variables: Variables }>) {

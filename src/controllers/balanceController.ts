@@ -1,6 +1,6 @@
 import { Context } from "hono";
-import { BalanceService } from "../services/balanceService";
-import { Variables } from "../types/data";
+import { BalanceService } from "../services/balanceService.js";
+import { Variables } from "../types/data.js";
 
 export class BalanceController {
   static async getBalance(c: Context<{ Variables: Variables }>) {

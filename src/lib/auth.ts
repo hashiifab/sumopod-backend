@@ -15,8 +15,8 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [bearer()],
-  baseURL: "http://localhost:3000",
-  trustedOrigins: ["http://localhost:3001"],
+  baseURL: process.env.BETTER_AUTH_URL || "https://sumopod-backend.fly.dev",
+  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',') || ["https://cloone-sumopod.netlify.app"],
   databaseHooks: {
     user: {
       create: {

@@ -1,6 +1,6 @@
 import { Context } from "hono";
-import { TransactionService } from "../services/transactionService";
-import { Variables } from "../types/data";
+import { TransactionService } from "../services/transactionService.js";
+import { Variables } from "../types/data.js";
 
 export class TransactionController {
   static async getTransactions(c: Context<{ Variables: Variables }>) {

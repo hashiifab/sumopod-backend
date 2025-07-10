@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const XENDIT_CALLBACK_TOKEN = process.env.XENDIT_CALLBACK_TOKEN!;
+const EXTERNAL_ID_PREFIX = process.env.EXTERNAL_ID_PREFIX || "sumopod-";
 
 export const xenditWebhook = async (c: Context) => {
   const token = c.req.header("x-callback-token");
@@ -13,7 +14,7 @@ export const xenditWebhook = async (c: Context) => {
   const body = await c.req.json();
   const { external_id, amount } = body;
 
-  const idString = external_id?.replace("sumopod-", "");
+  const idString = external_id?.replace(EXTERNAL_ID_PREFIX, "");
   const id = parseInt(idString);
 
   if (!id || !amount || isNaN(id)) {

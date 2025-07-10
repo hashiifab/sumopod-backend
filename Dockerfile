@@ -18,18 +18,21 @@ FROM base as build
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
-    apt-get install -y python-is-python3 pkg-config build-essential openssl 
+    apt-get install -y python-is-python3 pkg-config build-essential openssl libssl-dev
 
 # Install node modules
-COPY --link package.json package-lock.json .
+COPY --link package.json package-lock.json ./
 RUN npm install --production=false
 
 # Generate Prisma Client
-COPY --link prisma .
+COPY --link prisma ./prisma
 RUN npx prisma generate
 
 # Copy application code
 COPY --link . .
+
+# Build the application
+RUN npm run build
 
 # Remove development dependencies
 RUN npm prune --production
@@ -37,6 +40,11 @@ RUN npm prune --production
 
 # Final stage for app image
 FROM base
+
+# Install OpenSSL in final image
+RUN apt-get update -qq && \
+    apt-get install -y openssl libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy built application
 COPY --from=build /app /app

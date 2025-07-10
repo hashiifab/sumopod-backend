@@ -2,6 +2,8 @@ import { Context } from "hono";
 import { PrismaClient } from "@prisma/client";
 
 const XENDIT_API_KEY = process.env.XENDIT_API_KEY!;
+const XENDIT_API_URL = process.env.XENDIT_API_URL || "https://api.xendit.co/v2/invoices";
+const EXTERNAL_ID_PREFIX = process.env.EXTERNAL_ID_PREFIX || "sumopod-";
 const prisma = new PrismaClient({
   log: ["warn", "error"], // minimal logging
 });
@@ -21,19 +23,19 @@ export const createInvoice = async (c: Context) => {
     },
   });
 
-  const xres = await fetch("https://api.xendit.co/v2/invoices", {
+  const xres = await fetch(XENDIT_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Basic " + btoa(XENDIT_API_KEY + ":"),
     },
     body: JSON.stringify({
-      external_id: `sumopod-${inserted.id}`,
+      external_id: `${EXTERNAL_ID_PREFIX}${inserted.id}`,
       amount: body.amount,
     }),
   });
 
-  const xendit = await xres.json();
+  const xendit = await xres.json() as any;
 
   await prisma.payment.update({
     where: { id: inserted.id },
