@@ -1,56 +1,32 @@
-# syntax = docker/dockerfile:1
+FROM node:20-slim
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=20.18.0
-FROM node:${NODE_VERSION}-slim as base
-
-LABEL fly_launch_runtime="NodeJS/Prisma"
-
-# NodeJS/Prisma app lives here
 WORKDIR /app
 
-# Set production environment
-ENV NODE_ENV=production
+# Install dependencies
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
+# Copy package files
+COPY package*.json ./
 
-# Throw-away build stage to reduce size of final image
-FROM base as build
+# Install dependencies
+RUN npm install
 
-# Install packages needed to build node modules
-RUN apt-get update -qq && \
-    apt-get install -y python-is-python3 pkg-config build-essential openssl libssl-dev
+# Copy source code
+COPY . .
 
-# Install node modules
-COPY --link package.json package-lock.json ./
-RUN npm install --production=false
-
-# Generate Prisma Client
-COPY --link prisma ./prisma
+# Generate Prisma client
 RUN npx prisma generate
 
-# Copy application code
-COPY --link . .
-
-# Build the application
+# Build the app
 RUN npm run build
 
-# Remove development dependencies
-RUN npm prune --production
+# Copy and set permissions for entrypoint script
+COPY docker-entrypoint /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint
 
+# Expose port
+EXPOSE 8080
 
-# Final stage for app image
-FROM base
-
-# Install OpenSSL in final image
-RUN apt-get update -qq && \
-    apt-get install -y openssl libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy built application
-COPY --from=build /app /app
-
-# Entrypoint prepares the database.
-ENTRYPOINT ["/app/docker-entrypoint"]
-
-# Start the server by default, this can be overwritten at runtime
-CMD [ "npm", "run", "start" ]
+# Use entrypoint script
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["npm", "run", "start"]

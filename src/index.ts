@@ -24,6 +24,11 @@ app.use(
   })
 );
 
+// Health check endpoint
+app.get("/health", (c) => {
+  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.route("/", authRoute);
 app.route("/api/data", dataRoute);
 
